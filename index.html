@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Implementation blueprint for the Finequs Flocamo Network Exchange, Exchange Hub and partner Edge Gateway.">
+  <title>Flocamo Network Exchange — Implementation Blueprint</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section class="access-gate" id="accessGate" aria-labelledby="accessTitle">
+    <div class="access-panel">
+      <div class="access-brand"><span class="brand-mark">FQ</span><span><strong>Flocamo</strong><small>Network Exchange</small></span></div>
+      <p class="eyebrow">Finequs technical alignment pack</p>
+      <h1 id="accessTitle">Enter the team access PIN.</h1>
+      <p>This walkthrough explains the proposed Finequs Exchange Hub and the Edge Gateway to be installed independently in each partner environment.</p>
+      <form id="accessForm">
+        <label for="accessPin">Four-digit PIN</label>
+        <div class="pin-row">
+          <input id="accessPin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" required autofocus>
+          <button type="submit">Open blueprint</button>
+        </div>
+        <p class="access-error" id="accessError" role="alert" aria-live="polite"></p>
+      </form>
+      <small class="access-note">Restricted presentation material · Finequs and implementation partners</small>
+    </div>
+  </section>
+  <div class="progress" id="progress"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Flocamo Network Exchange home">
+      <span class="brand-mark">FQ</span>
+      <span><strong>Flocamo</strong><small>Network Exchange</small></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#model">Model</a>
+      <a href="#flows">Flows</a>
+      <a href="#repositories">Repositories</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#plan">Plan</a>
+    </nav>
+    <button class="print-button" id="printButton" type="button">Print / PDF</button>
+  </header>
+
+  <main id="top">
+    <section class="hero section-shell">
+      <div class="hero-copy">
+        <p class="eyebrow">Technical alignment pack · 12 October 2026</p>
+        <h1>One exchange.<br><span>Many lender networks.</span></h1>
+        <p class="hero-lead">A federated API exchange that lets Finequs, nStore, Fynaptic and future participants use their own lender connections—and securely make approved routes available to one another.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#flows">Walk through the flows</a>
+          <a class="button secondary" href="#repositories">See the build split</a>
+        </div>
+        <div class="truth-strip">
+          <span>Architecture & implementation plan</span>
+          <span>New repositories</span>
+          <span>No change to the live Partner Gateway</span>
+        </div>
+      </div>
+      <div class="hero-visual" aria-label="Network exchange topology">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="hub-card">
+          <span class="hub-icon">FX</span>
+          <strong>Finequs Exchange Hub</strong>
+          <small>Discovery · trust · routing · audit</small>
+        </div>
+        <div class="node node-a"><b>nStore Edge</b><span>InCred</span></div>
+        <div class="node node-b"><b>Fynaptic Edge</b><span>Axis Bank</span></div>
+        <div class="node node-c"><b>Finequs routes</b><span>CASHe · MoneyTap · others</span></div>
+      </div>
+    </section>
+
+    <section class="section-shell thesis" id="model">
+      <div class="section-intro">
+        <p class="eyebrow">01 · The model</p>
+        <h2>Not a central lender gateway.<br>A federated distribution network.</h2>
+        <p>The exchange separates route ownership from demand origination. A participant can originate business, supply lender routes, or do both.</p>
+      </div>
+      <div class="principle-grid">
+        <article class="principle-card accent-blue">
+          <span class="number">01</span>
+          <h3>Local route first</h3>
+          <p>If the selected programme belongs to the participant, its Edge Gateway calls the lender directly from the participant environment.</p>
+        </article>
+        <article class="principle-card accent-gold">
+          <span class="number">02</span>
+          <h3>Exchange when remote</h3>
+          <p>If another member owns the route, the Edge Gateway sends a canonical transaction to the Finequs Exchange Hub.</p>
+        </article>
+        <article class="principle-card accent-green">
+          <span class="number">03</span>
+          <h3>Credentials stay local</h3>
+          <p>The route-owning participant retains its lender keys, whitelisted endpoint, transformations and operational responsibility.</p>
+        </article>
+        <article class="principle-card accent-red">
+          <span class="number">04</span>
+          <h3>Status follows the same path</h3>
+          <p>Provider callbacks are persisted and normalised at each hop, then returned to the originating participant using the pinned route.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dark-section" id="topology">
+      <div class="section-shell">
+        <div class="section-intro light">
+          <p class="eyebrow">02 · Runtime topology</p>
+          <h2>Two products. Three independent deployments.</h2>
+          <p>The same Edge Gateway product is deployed separately inside nStore and Fynaptic. Finequs operates the central Exchange Hub.</p>
+        </div>
+        <div class="topology">
+          <article class="zone participant-zone">
+            <div class="zone-label">nStore environment</div>
+            <div class="service main-service"><strong>Flocamo Edge Gateway</strong><span>nStore node identity</span></div>
+            <div class="service"><strong>InCred adapter</strong><span>Local credentials · allowlisted IP</span></div>
+            <div class="mini-row"><span>Local queue</span><span>Audit</span><span>Callbacks</span></div>
+          </article>
+          <div class="exchange-arrows"><span>signed exchange API</span><i>⇄</i><small>durable store-and-forward</small></div>
+          <article class="zone hub-zone">
+            <div class="zone-label">Finequs environment</div>
+            <div class="service main-service gold"><strong>Flocamo Exchange Hub</strong><span>Participant + route registry</span></div>
+            <div class="service"><strong>Finequs adapter runtime</strong><span>CASHe · MoneyTap · TrueBalance · DigiKredit</span></div>
+            <div class="mini-row"><span>Exchange ledger</span><span>Routing</span><span>DLQ</span></div>
+          </article>
+          <div class="exchange-arrows"><span>signed exchange API</span><i>⇄</i><small>durable store-and-forward</small></div>
+          <article class="zone participant-zone">
+            <div class="zone-label">Fynaptic environment</div>
+            <div class="service main-service"><strong>Flocamo Edge Gateway</strong><span>Fynaptic node identity</span></div>
+            <div class="service"><strong>Axis Bank adapter</strong><span>Local credentials · allowlisted IP</span></div>
+            <div class="mini-row"><span>Local queue</span><span>Audit</span><span>Callbacks</span></div>
+          </article>
+        </div>
+        <div class="callout"><strong>Deployment rule:</strong> every participant Edge is an independent security and failure boundary. No lender credential is stored in the Exchange Hub unless Finequs owns that lender route.</div>
+      </div>
+    </section>
+
+    <section class="section-shell" id="flows">
+      <div class="section-intro">
+        <p class="eyebrow">03 · Reference transactions</p>
+        <h2>Three flows establish the complete model.</h2>
+        <p>Select a transaction to see ownership, data path, status return and commercial responsibility.</p>
+      </div>
+      <div class="flow-tabs" role="tablist" aria-label="Reference transaction">
+        <button class="flow-tab active" data-flow="local" role="tab" aria-selected="true">1 · nStore → InCred</button>
+        <button class="flow-tab" data-flow="finequs" role="tab" aria-selected="false">2 · nStore → CASHe</button>
+        <button class="flow-tab" data-flow="federated" role="tab" aria-selected="false">3 · nStore → Axis</button>
+      </div>
+      <div class="flow-panel" id="flowPanel" aria-live="polite"></div>
+    </section>
+
+    <section class="simulator-section">
+      <div class="section-shell simulator-grid">
+        <div>
+          <p class="eyebrow">04 · Route resolution</p>
+          <h2>The router resolves a programme version—not a lender name.</h2>
+          <p>One lender can expose several programmes through different owners. The selected programme pins one immutable route for the life of the submission.</p>
+        </div>
+        <div class="simulator-card">
+          <label for="origin">Origin participant</label>
+          <select id="origin">
+            <option value="nstore">nStore</option>
+            <option value="fynaptic">Fynaptic</option>
+          </select>
+          <label for="programme">Selected programme</label>
+          <select id="programme">
+            <option value="incred">InCred Business Loan · nStore</option>
+            <option value="cashe">CASHe Personal Loan · Finequs</option>
+            <option value="axis">Axis Business Loan · Fynaptic</option>
+          </select>
+          <div class="route-result" id="routeResult"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell" id="protocol">
+      <div class="section-intro split-intro">
+        <div>
+          <p class="eyebrow">05 · Exchange protocol</p>
+          <h2>One canonical envelope across every hop.</h2>
+        </div>
+        <p>The protocol records the origin, route owner and ultimate provider separately. Personal data should be referenced or encrypted wherever the intermediary does not need to inspect it.</p>
+      </div>
+      <div class="protocol-grid">
+        <div class="code-card">
+<pre><code>{
+  "exchangeVersion": "1.0",
+  "networkApplicationId": "napp_...",
+  "originParticipantId": "nstore",
+  "routeOwnerParticipantId": "fynaptic",
+  "ultimateProviderId": "axis-bank",
+  "programmeVersionId": "axis-bl-v3",
+  "routeVersionId": "route-fyn-axis-v2",
+  "correlationId": "...",
+  "idempotencyKey": "...",
+  "consentArtifactId": "...",
+  "purpose": "credit-application",
+  "dataManifest": { "schema": "business-loan-v4" },
+  "returnRoute": ["fynaptic", "finequs", "nstore"]
+}</code></pre>
+        </div>
+        <div class="protocol-list">
+          <article><b>Signed</b><span>mTLS plus participant signature and timestamp/replay protection.</span></article>
+          <article><b>Versioned</b><span>OpenAPI, AsyncAPI and JSON Schema contracts with compatibility checks.</span></article>
+          <article><b>Idempotent</b><span>Stable application and operation keys prevent duplicate lender submissions.</span></article>
+          <article><b>Traceable</b><span>Correlation and causation IDs survive every hop and callback.</span></article>
+          <article><b>Minimised</b><span>Each hop receives only the data required for its declared role and purpose.</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="dark-section" id="repositories">
+      <div class="section-shell">
+        <div class="section-intro light">
+          <p class="eyebrow">06 · Repository split</p>
+          <h2>New foundations. Existing gateway untouched.</h2>
+          <p>The current `finequs-partner-gateway-platform` remains read-only and operational. Its proven patterns inform the new implementations.</p>
+        </div>
+        <div class="repo-grid">
+          <article class="repo-card">
+            <div class="repo-title"><span>H</span><div><small>NEW PRIVATE REPOSITORY</small><h3>flocamo-exchange-hub</h3></div></div>
+            <p>Finequs-operated control and routing plane.</p>
+            <ul>
+              <li>Participant and node registry</li>
+              <li>Programme and route directory</li>
+              <li>Federated route resolver</li>
+              <li>Exchange ingress/egress</li>
+              <li>Finequs lender adapters</li>
+              <li>Status and callback router</li>
+              <li>Exchange audit and commercials</li>
+              <li>Shared protocol contracts</li>
+            </ul>
+          </article>
+          <article class="repo-card">
+            <div class="repo-title"><span>E</span><div><small>NEW PRIVATE REPOSITORY</small><h3>flocamo-edge-gateway</h3></div></div>
+            <p>Reusable gateway installed separately for every participant.</p>
+            <ul>
+              <li>Local versus exchange resolver</li>
+              <li>Participant node identity</li>
+              <li>Local lender adapters</li>
+              <li>Credential and secret references</li>
+              <li>Local queues and outbox/inbox</li>
+              <li>Provider callbacks and polling</li>
+              <li>nStore and Fynaptic profiles</li>
+              <li>Deployment/conformance runbooks</li>
+            </ul>
+          </article>
+        </div>
+        <div class="boundary-row">
+          <div><b>Reference only</b><span>finequs-partner-gateway-platform</span></div>
+          <div class="arrow">→</div>
+          <div><b>Selective reimplementation</b><span>adapters · contracts · outbox · security tests</span></div>
+          <div class="arrow">→</div>
+          <div><b>No live cutover</b><span>until separate approval and migration testing</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell" id="deployment">
+      <div class="section-intro">
+        <p class="eyebrow">07 · Partner environment implementation</p>
+        <h2>The gateway must be installed—not merely called.</h2>
+        <p>For participant-owned lender APIs, the Edge Gateway runs inside the participant's approved environment so its lender can whitelist the correct endpoint and egress identity.</p>
+      </div>
+      <div class="deployment-grid">
+        <article class="deployment-card">
+          <span class="owner">Finequs provides</span>
+          <h3>Product and protocol</h3>
+          <ul>
+            <li>Container images and signed releases</li>
+            <li>Infrastructure templates</li>
+            <li>Canonical contracts and SDK</li>
+            <li>Node registration and certificates</li>
+            <li>Observability and health contract</li>
+            <li>Adapter conformance test kit</li>
+            <li>Upgrade and rollback runbooks</li>
+          </ul>
+        </article>
+        <article class="deployment-card">
+          <span class="owner blue">Participant provides</span>
+          <h3>Environment and lender access</h3>
+          <ul>
+            <li>Azure/VPC subscription and network</li>
+            <li>Stable inbound hostname and TLS</li>
+            <li>Static egress IP for lender allowlisting</li>
+            <li>Vault and lender credentials</li>
+            <li>Private connectivity where required</li>
+            <li>Operations contacts and escalation</li>
+            <li>Approval to expose each route</li>
+          </ul>
+        </article>
+        <article class="deployment-card">
+          <span class="owner green">Joint verification</span>
+          <h3>Go-live gates</h3>
+          <ul>
+            <li>Contract compatibility</li>
+            <li>mTLS/signature and replay tests</li>
+            <li>Provider sandbox certification</li>
+            <li>Duplicate and out-of-order callbacks</li>
+            <li>Failure/retry/dead-letter recovery</li>
+            <li>Consent and recipient disclosures</li>
+            <li>Reconciliation and audit evidence</li>
+          </ul>
+        </article>
+      </div>
+      <div class="environment-flow">
+        <span>Customer / main platform</span><i>→</i><span class="highlight">Participant Edge Gateway</span><i>→</i><span>Local lender <em>or</em> Finequs Exchange</span>
+      </div>
+    </section>
+
+    <section class="section-shell" id="security">
+      <div class="section-intro split-intro">
+        <div><p class="eyebrow">08 · Trust model</p><h2>Every node is trusted narrowly.</h2></div>
+        <p>Network membership does not grant universal data access. Trust is established per participant, route, purpose, contract version and environment.</p>
+      </div>
+      <div class="security-grid">
+        <article><span>01</span><h3>Node identity</h3><p>Each Edge has a unique certificate, participant ID, environment and approved endpoint.</p></article>
+        <article><span>02</span><h3>Route entitlement</h3><p>Consumers can use only route versions explicitly shared with them.</p></article>
+        <article><span>03</span><h3>Consent chain</h3><p>Customer disclosure identifies the originator, intermediaries and ultimate regulated provider.</p></article>
+        <article><span>04</span><h3>Credential custody</h3><p>Provider keys remain in the vault controlled by the route-owning participant.</p></article>
+        <article><span>05</span><h3>Immutable evidence</h3><p>Configuration, submission, callback, failure and replay actions leave reconstructable audit records.</p></article>
+        <article><span>06</span><h3>Commercial truth</h3><p>Route ownership, schedule version and transaction outcome feed one exchange ledger.</p></article>
+      </div>
+    </section>
+
+    <section class="plan-section" id="plan">
+      <div class="section-shell">
+        <div class="section-intro">
+          <p class="eyebrow">09 · Team implementation sequence</p>
+          <h2>Build the protocol once. Prove it through three routes.</h2>
+        </div>
+        <ol class="timeline">
+          <li><span>01</span><div><b>Freeze contracts</b><p>Envelope, identities, programme/route versions, statuses, errors, signatures and compatibility policy.</p></div></li>
+          <li><span>02</span><div><b>Establish trust</b><p>Participant registration, node certificates, mTLS, signed requests, replay protection and environment separation.</p></div></li>
+          <li><span>03</span><div><b>Prove local routing</b><p>nStore Edge resolves and submits InCred without sending customer data through Finequs.</p></div></li>
+          <li><span>04</span><div><b>Prove Finequs routing</b><p>nStore Edge sends CASHe through the Exchange Hub and receives asynchronous statuses.</p></div></li>
+          <li><span>05</span><div><b>Prove federation</b><p>nStore sends Axis through Finequs to Fynaptic; callback returns across the pinned reverse path.</p></div></li>
+          <li><span>06</span><div><b>Harden operations</b><p>Retries, idempotency, dead letters, monitoring, reconciliation, security and load tests.</p></div></li>
+          <li><span>07</span><div><b>Controlled activation</b><p>Enable one route at a time after participant, provider, contractual and operational gates pass.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section-shell decisions" id="decisions">
+      <div class="section-intro">
+        <p class="eyebrow">10 · Decisions required from the call</p>
+        <h2>Leave the meeting with owners and dates.</h2>
+      </div>
+      <div class="decision-list">
+        <label><input type="checkbox"> Confirm the Finequs, nStore and Fynaptic technical owners.</label>
+        <label><input type="checkbox"> Confirm where each Edge Gateway will be hosted and operated.</label>
+        <label><input type="checkbox"> List lender sandbox endpoints, auth methods, callbacks and IP-whitelisting rules.</label>
+        <label><input type="checkbox"> Agree the canonical application and status contract owners.</label>
+        <label><input type="checkbox"> Confirm which lender routes may legally and commercially be shared.</label>
+        <label><input type="checkbox"> Agree data recipients, consent language, retention and support responsibilities.</label>
+        <label><input type="checkbox"> Select the three reference routes and sandbox test dates.</label>
+        <label><input type="checkbox"> Agree the cutover rule: existing Finequs gateway remains untouched.</label>
+      </div>
+    </section>
+
+    <section class="closing">
+      <div class="section-shell closing-grid">
+        <div><p class="eyebrow">Desired outcome</p><h2>Every participant keeps its lender relationships.<br>The network multiplies their reach.</h2></div>
+        <div class="closing-statement">Finequs operates the exchange.<br>Participants operate their nodes.<br>Providers remain the decision makers.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="section-shell footer-grid">
+      <div class="brand"><span class="brand-mark">FQ</span><span><strong>Flocamo</strong><small>Network Exchange</small></span></div>
+      <p>Architecture blueprint · Synthetic examples only · Not a production activation statement</p>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
